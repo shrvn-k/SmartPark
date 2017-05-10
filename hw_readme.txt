@@ -17,3 +17,8 @@ hw.reEnterPIN()
 In case PIN entry fails first time. Call this. Same as enterPIN() but 
 message displayed is different.
 
+hw.openGate(duration)
+Opens the boom-barrier and closes it after a pre-defined duration.
+Params:
+	duration: duration between opening and closing in seconds, default = 10
+

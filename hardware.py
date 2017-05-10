@@ -1,5 +1,31 @@
+'''
+            Raspberry Pi GPIO Pinout:
+
+              3.3V |1   2| 5V
+             GPIO2 |3   4| 5V
+             GPIO3 |5   6| GND
+             GPIO4 |7   8| GPIO14 servo
+               GND |9  10| GPIO15 
+         d2 GPIO17 |11 12| GPIO18 d3
+            GPIO27 |13 14| GND
+         d4 GPIO22 |15 16| GPIO23 d1
+              3.3V |17 18| GPIO24 e
+            GPIO10 |19 20| GND
+             GPIO9 |21 22| GPIO25 rs
+            GPIO11 |23 24| GPIO8
+               GND |25 26| GPIO7
+             ID_SD |27 28| ID_SC
+             GPIO5 |29 30| GND
+             GPIO6 |31 32| GPIO12
+            GPIO13 |33 34| GND
+            GPIO19 |35 36| GPIO16 echo
+     buzzer GPIO26 |37 38| GPIO20 trig
+               GND |39 40| GPIO21
+
+'''
+
 import time 
-from gpiozero import DistanceSensor, Buzzer
+from gpiozero import DistanceSensor, Buzzer, Servo
 from RPLCD import CharLCD
 from RPi import GPIO
 
@@ -22,7 +48,8 @@ TRIGGER_PIN = 20
 MAX_DIST = 2
 ultrasonic = DistanceSensor(echo = ECHO_PIN, trigger = TRIGGER_PIN, max_distance = MAX_DIST)
 
-
+#Servo
+servo = Servo(14)
 
 
 def buzz(duration = 2):
@@ -70,3 +97,9 @@ def reEnterPIN():
             lcd.write_string('PIN confirmed')
             confirm = True
     return pin
+
+
+def openGate(gatewait=10):
+    servo.mid()
+    time.sleep(gatewait)
+    servo.min()
