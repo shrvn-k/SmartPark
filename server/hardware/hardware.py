@@ -4,7 +4,7 @@
               3.3V |1   2| 5V
              GPIO2 |3   4| 5V
              GPIO3 |5   6| GND
-             GPIO4 |7   8| GPIO14 servo
+    858764servo    GPIO4 |7   8| GPIO14 
                GND |9  10| GPIO15 
          d2 GPIO17 |11 12| GPIO18 d3
             GPIO27 |13 14| GND
@@ -25,6 +25,7 @@
 '''
 
 import time 
+import pigpio
 from gpiozero import DistanceSensor, Buzzer, Servo
 from RPLCD import CharLCD
 from RPi import GPIO
@@ -48,12 +49,23 @@ TRIGGER_PIN = 20
 MAX_DIST = 2
 ultrasonic = DistanceSensor(echo = ECHO_PIN, trigger = TRIGGER_PIN, max_distance = MAX_DIST)
 
+'''
 #Servo
-servo = Servo(14)
+servopin = 4
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(servopin,GPIO.OUT)
+servo = GPIO.PWM(servopin,50)
+'''
+
+#Servo pigpio
+servopin = 4
+GATE_OPEN = 1500
+GATE_CLOSE = 500
+pi = pigpio.pi()
 
 
-def buzz(duration = 2):
-        bz.beep(on_time = duration, n = 1)
+def buzz(ontime = 0.5, offtime = 0.1, num = 2):
+        bz.beep(on_time = ontime, off_time = offtime, n = num)
 
         
 def isCar(dist = 60):
@@ -98,8 +110,70 @@ def reEnterPIN():
             confirm = True
     return pin
 
+def enterPIN(reEnter = False):
 
-def openGate(gatewait=10):
-    servo.mid()
-    time.sleep(gatewait)
+    confirm = False
+    if reEnter == False:
+        msg = 'Gatepass error!\n\rEnter PIN'
+    else : msg = 'Invalid PIN!\n\rRe-enter PIN'
+    
+    while not confirm:
+        lcd.clear()
+        lcd.write_string(msg)
+        pin = raw_input('Enter PIN: ')
+        lcd.clear()
+        #lcd.write_string('Confirm PIN? Y/N\n\r')
+        lcd.write_string(pin)
+        #choice = raw_input('Confirm PIN? Y/N')
+        #if choice.lower() == 'y':
+        #    lcd.clear()
+        #    lcd.write_string('PIN confirmed')
+        confirm = True
+    return pin
+
+
+'''
+def gatepass(gatewait=10):
+	#Servo
+    servo = Servo(4)
+    servo.max()
+    print "Gate opened"
+    time.sleep(3)
+    print "Gate closing"
     servo.min()
+    print "Gate closed"
+    time.sleep(0.1)
+    
+
+
+def opengate():
+	servo.min()
+
+
+def closegate():
+	servo.max()
+
+'''
+
+
+'''
+def gatepass():
+        servo.start(2.5)
+        time.sleep(0.5)
+        print "Opening gate"
+        servo.ChangeDutyCycle(7.5)
+        print "Gate opened, Waiting"
+        time.sleep(5)
+        print "Closing gate"
+        servo.ChangeDutyCycle(2.5)
+        time.sleep(2)
+        print "Gate closed"
+        servo.stop()
+'''
+
+def gatepass():
+        print "Opening gate"
+        pi.set_servo_pulsewidth(servopin,GATE_OPEN)
+	time.sleep(3)
+	print "Closing Gate"
+	pi.set_servo_pulsewidth(servopin,GATE_CLOSE)
