@@ -2,10 +2,10 @@ import model
 import querystring as qs
 import util
 import ast
-import recognise as recog
-#import recognisedummy as recog
-import hardware.hardware as hw
-#import hardware.hardwaredummy as hw
+# import recognise as recog
+import recognisedummy as recog
+# import hardware.hardware as hw
+import hardware.hardwaredummy as hw
 import alwaysSense as aw
 
 # data = {"name" : ,"param" : ()}
@@ -107,6 +107,8 @@ def make_reg_false():
         f.write(di)
     return True
 
+# 
+
 def register_vehicle(owner,vehicle):
 
   
@@ -124,6 +126,8 @@ def register_vehicle(owner,vehicle):
   # check whether the plate is already registered if so dont add the plate
   notExist = model.insert_vehicle(qs.it_vehicle,rowVehicle) # insert into vehicle
   lplate = vehicle[0]
+  # if not notExist:
+  #   model.updateAsReg(lplate)
   print lplate
   isReg = model.is_registered_plate(lplate)
   print isReg
@@ -142,7 +146,7 @@ def register_vehicle(owner,vehicle):
     model.insert_ownership(qs.it_ownership,rowOwnership)
     #Registry table
 
-    date = util.get_current_date_time()
+    date = util.get_current_date()
     currAdmin = get_current_admin()
     currAdmin = "'" + currAdmin + "'"
     aid = model.retrive_id("Aid","Admin",qs.ATT_ADMIN[3],currAdmin)
@@ -161,7 +165,6 @@ def register_vehicle(owner,vehicle):
     data = {"name" : "view.display_registerd_user" ,"param" : ()}
     aw.isReg = False
     return data
-  # model.close_database()
   
  
 
@@ -187,7 +190,7 @@ def emergency_bypass(lplate):
     if admin == '':
         data = {"name" : "view.display_not_logged" ,"param" : ()}
         return data
-    time = util.get_current_date_time()
+    time = util.get_current_time()
     # call gatepass here
     hw.gatepass()
     sucess = model.emergency_bypass(lplate,time,admin)
@@ -214,7 +217,7 @@ def gate_pass(lplate):
     sucess =  model.is_registered_plate(lplate)
     if sucess:
         # data = {"name" : "view.display_sucessful_gatepass" ,"param" : ()}
-        time = util.get_current_date_time()
+        time = util.get_current_time()
         admin = get_current_admin()
         model.add_gate_pass(time,admin,lplate)
         return True
@@ -256,6 +259,7 @@ def control_gate_pass():
         hw.buzz()
         pin = hw.enterPIN() 
         sucess = gate_pass_via_pin(pin)
+        set_progress([0,0,1,0])
         if not sucess:
             count = 2
             while count > 0:
@@ -266,28 +270,29 @@ def control_gate_pass():
                     # hw.openBoomBarrier() 
                     #print 'boom boom'
                     hw.gatepass()
+                    gate_pass(lplate)
                     break
                 count -= 1
-            hw.buzz()
-	else:
-		hw.gatepass()
-        
-            # hw.displayMessage('Failed to reconize the vehicle!
-                
+           # hw.buzz()
+        else:
+            hw.gatepass()
+            gate_pass(lplate)     
     else:
+        set_progress([0,0,1,1])
         isPlateReg = model.is_registered_plate(lplate)
         print 'no rege'
         print isPlateReg
         if isPlateReg:
             hw.gatepass()
+            gate_pass(lplate)
         else:
             hw.buzz()
             pin = hw.enterPIN()
             gate_pass_via_pin(pin)
             sucess = gate_pass(lplate)
             
-    if not sucess:
-        hw.buzz()
+            if not sucess:
+                hw.buzz()
         #hw.displayMessage('Failed to reconize the vehicle!')
     return
 
@@ -381,6 +386,31 @@ def train(lplate):
     recog.train(lplate)
     return True
 
+def get_progress():
+    with open('meta.txt','r+') as f:
+            di = f.read()
+            di = ast.literal_eval(di)
+            progress = di['progress']
+            return progress
+
+def set_progress(values):
+
+    with open('meta.txt','r+') as f:
+            di = f.read()
+            di = ast.literal_eval(di)
+            progress = di['progress']
+            for i in range(len(values)):
+                progress[i] += values[i]
+            di['progress'] = progress
+            di = str(di)
+            f.seek(0)
+            f.truncate()
+            f.seek(0)
+            f.seek(0)
+            f.write(di)
+    return True
+
+
 
 if __name__ == "__main__":
     init_controller()
@@ -424,5 +454,10 @@ if __name__ == "__main__":
     # get_log_data(1)
     # recognize_plate()
     # control_gate_pass()
-    make_reg_true()
+    # make_reg_true()
+    # set_progress([1,1,1,1])
+    register_vehicle(['mary','32165','shd'],['shuf'])
+    register_vehicle(['sad','3213365','shasdadd'],['shasdaduf'])
+    register_vehicle(['shrav','2365','sch@gmai;.com'],['sc132'])
+    print get_registered_vehicles()
 

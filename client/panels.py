@@ -10,6 +10,7 @@ from javax.swing import Box
 from javax.swing import JOptionPane
 from javax.swing import JTabbedPane
 from javax.swing import JTable
+from javax.swing import JProgressBar
 from javax.swing import ImageIcon
 from javax.swing.table import DefaultTableModel
 
@@ -25,6 +26,8 @@ from size import *
 import dialogs as dialog
 import reutil as rut
 import client 
+
+import SPSMainWindow as main
 
 def isFieldsEmpty(values):
 	for i in values:
@@ -374,10 +377,15 @@ class RegForm(JPanel):
 		elif not rut.isEmail(email):
 			dialog.improperInput('Enter a valid email address','Invalid email')
 		else:
+			name = self.nameField.getText()
+			mob = self.mobField.getText()
+			email = self.emailField.getText()
+			lplate = self.vehicleField.getText()
 			lplate = rut.removeSpace(lplate)
 			owner = [name,mob,email]
 			vehicle = [lplate]
 			client.register_vehicle(owner,vehicle)
+			self.validate()
 
 
 
@@ -386,8 +394,16 @@ class RegForm(JPanel):
 		plate = client.recognize_plate()
 		if plate:
 			msg = 'confirm plate:' + plate
-			dialog.dispQuestion(msg,'confirm')
+			response = dialog.dispQuestion(msg,'confirm')
+			
+			if response:
+				self.vehicleField.setText(plate)
+				client.set_progress([1,1,0,0])
+			else:
+				client.set_progress([1,0,0,0])
+				self.vehicleField.setText('')
 		else:
+			client.set_progress([1,0,0,0])
 			dialog.dispErrorMsg('coudnot reocnize!')
 
 
@@ -569,7 +585,7 @@ class EmergencyBypassForm(JPanel):
 			dialog.improperInput('One or more fields are missing!','No Input')
 		else:
 			lplate = rut.removeSpace(lplate)
-			print lplate
+			client.emergency_bypass(lplate)
 
 
 class LoginForm(JPanel):
@@ -644,6 +660,11 @@ class LoginForm(JPanel):
 			dialog.improperInput('One or more fields are missing!','No Input')
 		else:
 			client.login(username,password)
+			method = 'refresh'
+			callMethod = getattr(TopPanel(),method)
+			# print main.refresh()
+
+			# callMethod()
 
 
 class ViewLogsPanel(JPanel):
@@ -662,7 +683,7 @@ class ViewLogsPanel(JPanel):
 		self.loadRegData()
 		self.loadParkData()
 		self.loadBypassData()
-
+		# self.setLayout(BorderLayout())
 		self.initComponents()
 
 	def initComponents(self):
@@ -691,7 +712,7 @@ class ViewLogsPanel(JPanel):
 		self.logTabbedPane.insertTab("Bypassed", None, self.bypassTab, None, 2)
 
 
-		self.add(self.logTabbedPane)
+		self.add(self.logTabbedPane,BorderLayout.CENTER)
 
 		innerBorder = BorderFactory.createTitledBorder('View Logs ')
 		outerBorder = BorderFactory.createEmptyBorder(5,5,5,5)
@@ -723,7 +744,8 @@ class CenterPanel(JPanel):
 
 
 		# colors for testing 
-		self.menuPanel.setBackground(Color.PINK)
+		# self.menuPanel.setBackground(Color.PINK)
+		self.menuPanel.setBackground(Color.decode('#3d4968'))
 		self.setBackground(Color.YELLOW)
 		
 		# self.setLayout(GridLayout(1,2))
@@ -748,6 +770,7 @@ class CenterPanel(JPanel):
 		# self.setPreferredSize(Dimension(250,250))
 
 		#add widgets
+		buttonPanel.setBackground(Color.decode('#3d4968'))
 		buttonPanel.add(addAdmin)
 		buttonPanel.add(deleteAdmin)
 		buttonPanel.add(regUser)
@@ -772,7 +795,7 @@ class CenterPanel(JPanel):
 
 
 	def addAdminPanel(self,e):
-		client.make_reg_true()
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel.setVisible(False)
 		self.currentPanel = AddAdminForm()
@@ -781,7 +804,6 @@ class CenterPanel(JPanel):
 		self.validate()
 
 	def addRegPanel(self,e):
-		# client.make_reg_true()
 		client.make_reg_true()
 		self.remove(self.currentPanel)
 		self.currentPanel = RegForm()
@@ -789,12 +811,14 @@ class CenterPanel(JPanel):
 		self.validate()
 
 	def addDeleteAdminPanel(self,e):
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel = DeleteAdminForm()
 		self.add(self.currentPanel,BorderLayout.CENTER)
 		self.validate()
 
 	def addDeregisterPanel(self,e):
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel = DeregisterForm()
 		self.add(self.currentPanel,BorderLayout.CENTER)
@@ -802,18 +826,21 @@ class CenterPanel(JPanel):
 
 		
 	def addEmergencyPanel(self,e):
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel = EmergencyBypassForm()
 		self.add(self.currentPanel,BorderLayout.CENTER)
 		self.validate()
 
 	def addLoginForm(self,e):
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel = LoginForm()
 		self.add(self.currentPanel,BorderLayout.CENTER)
 		self.validate()
 
 	def logout(self,e):
+		client.make_reg_false()
 		result = dialog.dispQuestion('Do you want to logout?','Logut')
 		if result:
 			client.logout()
@@ -821,6 +848,7 @@ class CenterPanel(JPanel):
 			self.addDefaultPanel(None)
 
 	def addViewLogsPanel(self,e):
+		client.make_reg_false()
 		self.remove(self.currentPanel)
 		self.currentPanel = ViewLogsPanel()
 		self.add(self.currentPanel,BorderLayout.CENTER)
@@ -830,7 +858,106 @@ class CenterPanel(JPanel):
 
 	
 class BottomPanel(JPanel):
-	pass
+
+	def __init__(self):
+
+		self.holdPanel = JPanel()
+		self.topPanel =  JPanel()
+		self.bottomPanel = JPanel()
+
+		self.holdPanel.setBackground(Color.decode('#dddee6'))
+		self.topPanel.setBackground(Color.decode('#dddee6'))
+		self.bottomPanel.setBackground(Color.decode('#dddee6'))
+
+		self.topPanel.setPreferredSize(Dimension(300,30))
+
+		self.regBar = JProgressBar()
+		self.gatePassBar = JProgressBar()
+		self.regLabel = JLabel('Register : ')
+		self.gatepassLabel = JLabel('          Gate Pass : ')
+		self.regPercentlabel = JLabel('')
+		self.gatePercentlabel = JLabel('')
+
+		self.refreshButton = JButton('Refresh',actionPerformed = self.updateProgress)
+
+		self.regBar.setMinimum(0)
+		self.regBar.setMaximum(100)
+		self.regBar.setStringPainted(True)
+
+		self.gatePassBar.setMinimum(0)
+		self.gatePassBar.setMaximum(100)
+		self.gatePassBar.setStringPainted(True)
+
+		self.setLayout(BorderLayout())
+
+		self.updateProgress(None)
+
+	def updateProgress(self,e):
+
+		progress = client.get_progress()
+		regTotal = progress[0]
+		regRecog = progress[1]
+		gateTotal = progress[2]
+		gateRecog = progress[3]
+
+		regPercent = int((regRecog * 100) / regTotal)
+		gatePercent = int((gateRecog * 100) / gateTotal)
+
+		self.regBar.setValue(regPercent)
+		self.gatePassBar.setValue(gatePercent)
+
+		self.regBar.setString(str(regPercent) + '%')
+		self.gatePassBar.setString(str(gatePercent) + '%')
+
+		self.regPercentlabel.setText(str(regRecog) + '/' + str(regTotal))
+		self.gatePercentlabel.setText(str(gateRecog) + '/' + str(gateTotal) + '           '  )
+
+		if regPercent <= 30:
+			regColor = Color.RED
+		elif regPercent > 30 and regPercent < 50:
+			regColor = Color.ORANGE
+		elif regPercent >= 50 and regPercent <= 100:
+			regColor = Color.GREEN
+
+		if gatePercent <= 30:
+			gateColor = Color.RED
+		elif gatePercent > 30 and gatePercent < 50:
+			gateColor = Color.ORANGE
+		elif gatePercent >= 50 and gatePercent <= 100:
+			gateColor = Color.GREEN
+
+		self.regBar.setForeground(regColor)
+		self.gatePassBar.setForeground(gateColor)
+
+		self.holdPanel.add(self.regLabel)
+		self.holdPanel.add(self.regBar)
+		self.holdPanel.add(self.regPercentlabel)
+		self.holdPanel.add(self.gatepassLabel)
+		self.holdPanel.add(self.gatePassBar)
+		self.holdPanel.add(self.gatePercentlabel)
+		self.holdPanel.add(self.refreshButton)
+
+		self.add(self.holdPanel,BorderLayout.CENTER)
+		self.add(self.topPanel,BorderLayout.PAGE_START)
+		self.add(self.bottomPanel,BorderLayout.PAGE_END)
+
+
+
+		self.validate()
+
 
 class TopPanel(JPanel):
-	pass
+
+	def __init__(self):
+
+		self.login = JLabel('')
+		self.setLayout(BorderLayout())
+		self.refresh()
+
+	def refresh(self):
+		admin = client.get_current_admin()
+		self.login.setText('          Login : ' + admin)
+		self.login.setForeground(Color.decode('#ffffff'))
+		self.add(self.login,BorderLayout.LINE_START)
+		self.validate()
+

@@ -2,9 +2,10 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import xmlrpclib
 from controller import *
 
-#server = "localhost"
-server = "192.168.0.103"
+server = "localhost"
+# server = "192.168.0.103"
 # server = "172.17.9.28"
+server = "172.17.1.52"
 
 #do all the init functions here
 init_controller()
@@ -31,6 +32,9 @@ server.register_function(get_log_data, "get_log_data")
 server.register_function(recognize_plate, "recognize_plate")
 server.register_function(make_reg_true, "make_reg_true") 
 server.register_function(make_reg_false, "make_reg_false") 
+server.register_function(set_progress, "set_progress") 
+server.register_function(get_progress, "get_progress") 
+server.register_function(get_current_admin, "get_current_admin") 
 server.register_function(simpleAdd, "simpleAdd") 
 
 

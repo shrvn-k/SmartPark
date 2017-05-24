@@ -3,7 +3,9 @@ import dialogs
 
 host = "http://localhost:8000/"
 # host = 'http://192.168.0.103:8000'
+host = 'http://192.168.43.253:8000'
 # host = "http://172.17.9.28:8000/"
+# host = "http://172.168.1.52:8000/"
 
 #create a proxy server 
 proxy = xmlrpclib.ServerProxy(host)
@@ -56,8 +58,15 @@ def emergency_bypass(lplate):
 	data = proxy.emergency_bypass(lplate)
 	name = data['name']
 	param = data['param']
-	met = view.methods[name]
+	met = dialogs.methods[name]
 	met()
+
+def set_progress(values):
+	proxy.set_progress(values)
+
+def get_progress():
+	data = proxy.get_progress()
+	return data
 
 # def gate_pass(lplate):
 # 	data = proxy.gate_pass(lplate)
@@ -122,6 +131,10 @@ def recognize_plate():
 	data = proxy.recognize_plate()
 	return data
 
+
+def get_current_admin():
+	data = proxy.get_current_admin()
+	return data
 
 if __name__ == '__main__':
 	# values = ['sdg',123565623,'sdfdsff','sdfsdf','226656','sms123']
